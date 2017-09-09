@@ -12,11 +12,12 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 RUN composer --version
 
 # Set timezone
-RUN echo "America/Toronto" > /etc/timezone
+RUN echo "Europe/Paris" > /etc/timezone
 RUN dpkg-reconfigure -f noninteractive tzdata
 
 # Type docker-php-ext-install to see available extensions
-RUN docker-php-ext-install pdo pdo_mysql
+#RUN docker-php-ext-install pdo pdo_mysql
+RUN docker-php-ext-install pdo
 
 # Install xdebug
 RUN pecl install xdebug
