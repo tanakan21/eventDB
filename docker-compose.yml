@@ -1,53 +1,65 @@
 version: '2'
 
 services:
+# Frontend eventdb: Angular
+    # angular-cli:
+    #     image: angular-cli
+    #     build: 
+    #         context: ./${APP_NAME}/front/angular-cli
+    #         dockerfile: Dockerfile-cli
+    eventdb-angular:
+        build:
+            context: ./${APP_NAME}/front/angular-cli
+            dockerfile: Dockerfile
+        ports:
+            - 4200:4200
+        # volumes_from:
+            # - angular-cli
+        volumes:
+            - ./${APP_NAME}/front/angular:/home/app/${APP_NAME}
+            - /c/Users/Jonathan/Documents/projets/projet_xp/docker/eventdb/front/angular/node_modules
+# Backend eventdb: Symfony - Nginx - MySQL
     eventdb-db:
         image: mysql
         command: mysqld --user=root --verbose --skip-sync-frm --innodb_flush_log_at_trx_commit=0 --innodb-support-xa=0 --bind-address=0.0.0.0 --query-cache-type=1
         ports:
             - 3306:3306
         volumes:
-            - "../${APP_NAME}/data/db:/var/lib/mysql"
+            - "./${APP_NAME}/data/db:/var/lib/mysql"
         environment:
             MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
             MYSQL_DATABASE: ${MYSQL_DATABASE}
             MYSQL_USER: ${MYSQL_USER}
             MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    eventdb-angular:
-        image: alexsuch/angular-cli:1.4.0-chromium
-        ports:
-            - 4200:4200
-        links:
-            - eventdb-back
-        volumes:
-            - ../${APP_NAME}/front/:/app
     eventdb-symfony:
-        build: ./${APP_NAME}-back/php7-fpm
+        build: ./${APP_NAME}/back/php7.1-pfm
         ports:
             - 9000:9000
         links:
             - eventdb-db:mysqldb
         volumes:
-            - ../${APP_NAME}/back:/var/www/${APP_NAME}
-            - ../logs/${APP_NAME}-back/symfony:/var/www/${APP_NAME}/var/logs
-            - ./${APP_NAME}-back/php7-fpm/php-timezone.ini:/usr/local/etc/php/conf.d/docker-php-timezone.ini
+            - ./${APP_NAME}/back/symfony:/var/www/${APP_NAME}
+            - ./logs/${APP_NAME}/back/symfony:/var/www/${APP_NAME}/var/logs
     eventdb-back:
-        build: ./${APP_NAME}-back/nginx
+        build: ./${APP_NAME}/back/nginx
         ports:
             - 80:80
         links:
             - eventdb-symfony
+            - eventdb-angular
         volumes_from:
             - eventdb-symfony
+            - eventdb-angular
         volumes:
-            - ../logs/${APP_NAME}-back/nginx:/var/log/nginx
+            - ./logs/${APP_NAME}/back/nginx:/var/log/nginx
+# Elastic search - Logstash- Kibana
     elk:
         image: willdurand/elk
         ports:
             - 81:80
         volumes:
-            - ../elk/logstash:/etc/logstash
-            - ../elk/logstash/patterns:/opt/logstash/patterns
+            - ./elk/logstash:/etc/logstash
+            - ./elk/logstash/patterns:/opt/logstash/patterns
         volumes_from:
             - eventdb-symfony
             - eventdb-back
